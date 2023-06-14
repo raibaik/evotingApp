@@ -35,13 +35,12 @@ Route::middleware(['admin.api'])->prefix('admin')->group(function () {
     Route::post('pemilihan', [AdminController::class, 'pemilihan']);
     Route::get('pemilihan', [AdminController::class, 'showpemilihan']);
     Route::get('pemilihan/{id}', [AdminController::class, 'showpemilihanbyid']);
-    Route::get('dashboard/{IdPemilih}', [AdminController::class, 'dashboard']);
-    
+
 });
 
 Route::middleware(['user.api'])->prefix('user')->group(function (){
-    Route::post('vote/{IdPemilih}', [UserController::class, 'vote']);
-    Route::get('dashboard/{IdPemilih}', [AdminController::class, 'dashboard']);
+    Route::post('voting', [UserController::class, 'vote']);
+    Route::get('hasilvoting', [UserController::class, 'HasilVoting']);
 });
 
 

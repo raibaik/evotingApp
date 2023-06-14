@@ -195,47 +195,6 @@ class AdminController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'nama_ketua' => 'required|max:255',
-            'foto_calon' => 'required|mimes:png,jpg,jpeg|max:2048',
-            'visi' => 'required',
-            'misi' => 'required',
-            'suara' => 'required|int',
-        ]);
-
-        if ($validator->fails()) {
-
-        }
-
-        $thumbnail = $request->file('foto_calon');
-
-        $fileName = now()->timestamp . '_' . $request->foto_calon->getClientOriginalName();
-
-        $thumbnail->move('uploads', $fileName);
-
-        $CalonsData = $validator->validated();
-
-        $recipe = Calons::create([
-            'nama_ketua' => $CalonsData['nama_ketua'],
-            'foto_calon' => 'uploads/' . $fileName,
-            'visi' => $CalonsData['visi'],
-            'misi' => $CalonsData['misi'],
-            'suara' => $CalonsData['suara'],
-
-
-        ]);
-
-        return response()->json([
-            'data' => [
-                'msg' => 'Kandidat Berhasil Di Tambahkan',
-                'Kandidat' => $CalonsData['nama_ketua'],
-            ]
-        ]);
-
-    }
-
-    public function update_calons(Request $request, $id)
-    {
-        $validator = Validator::make($request->all(), [
-            'nama_ketua' => 'required|max:255',
             'foto_calon' => 'required|mimes:png,jpg,jpeg',
             'visi' => 'required',
             'misi' => 'required',
@@ -243,33 +202,74 @@ class AdminController extends Controller
         ]);
 
         if ($validator->fails()) {
+            return response()->json([
+                'error' => $validator->errors(),
+            ], 400);
         }
-        $CalonsData = $validator->validated();
-        $calon = Calons::find($id);
 
-        if (isset($CalonsData['nama_ketua'])) {
-            $calon->nama_ketua = $CalonsData['nama_ketua'];
-            var_dump(123);
-        }
-//dd($validator);
-//        $fileName = '';
-        if (isset($CalonsData['foto_calon'])) {
+        $calon = new Calons();
+        $calon->nama_ketua = $request->nama_ketua;
+        $calon->visi = $request->visi;
+        $calon->misi = $request->misi;
+        $calon->suara = $request->suara;
+
+        if ($request->hasFile('foto_calon')) {
             $thumbnail = $request->file('foto_calon');
-            $fileName = now()->timestamp . '_' . $request->foto_calon->getClientOriginalName();
+            $fileName = now()->timestamp . '_' . $thumbnail->getClientOriginalName();
             $thumbnail->move('uploads', $fileName);
             $calon->foto_calon = 'uploads/' . $fileName;
         }
+
         $calon->save();
 
         return response()->json([
-            'data' => [
-                'msg' => 'Kandidat Berhasil Di Edit',
-                'Kandidat' => $CalonsData['nama_ketua'],
-                'visi' => $CalonsData['visi'],
-                'misi' => $CalonsData['misi'],
-            ]
-        ], 200);
+            'message' => 'Calon berhasil dibuat',
+            'calon' => $calon,
+        ], 201);
     }
+
+    public function update_calons(Request $request, $id)
+{
+    $validator = Validator::make($request->all(), [
+        'nama_ketua' => 'required|max:255',
+        'foto_calon' => 'required|mimes:png,jpg,jpeg',
+        'visi' => 'required',
+        'misi' => 'required',
+        'suara' => 'required|int',
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json([
+            'error' => $validator->errors(),
+        ], 400);
+    }
+
+    $calon = Calons::find($id);
+    if (!$calon) {
+        return response()->json([
+            'error' => 'Calon not found',
+        ], 404);
+    }
+
+    $calon->nama_ketua = $request->nama_ketua;
+    $calon->visi = $request->visi;
+    $calon->misi = $request->misi;
+    $calon->suara = $request->suara;
+
+    if ($request->hasFile('foto_calon')) {
+        $thumbnail = $request->file('foto_calon');
+        $fileName = now()->timestamp . '_' . $thumbnail->getClientOriginalName();
+        $thumbnail->move('uploads', $fileName);
+        $calon->foto_calon = 'uploads/' . $fileName;
+    }
+
+    $calon->save();
+
+    return response()->json([
+        'message' => 'Calon berhasil diupdate',
+        'calon' => $calon,
+    ], 200);
+}
 
     public function delete_calons($id_calon)
     {
@@ -349,53 +349,6 @@ class AdminController extends Controller
             ],
         ], 201);
     }
-
-//    public function Calons(Request $request, $IdPemilih)
-//    {
-//        //idpemilihan di dapatkan pada parameter request fe
-//        $validator = Validator::make($request->all(), [
-//            'nama_ketua' => 'required',
-//            'foto_calon' => 'required|image|mimes:png,jpg,jpeg|max:2048',
-//            'visi' => 'required',
-//            'misi' => 'required',
-//        ]);
-//
-//        if ($validator->fails()) {
-//            return response()->json(['error' => $validator->errors()], 400);
-//        }
-//
-//        $IdUser = $request->user;
-//
-//        $calons = Calons::where('IdUser', $IdUser->IdUser)
-//            ->where('IdPemilih', $IdPemilih)
-//            ->first();
-//
-//        if ($calons) {
-//            // User sudah terdaftar dalam tabel kandidat maka tidak bisa mengajukan lagi
-//            return response()->json(['message' => 'User sudah registrasi'], 422);
-//        }
-//        // Upload foto_calon dan simpan nama file ke kolom foto_calon
-//        $fotocalon = $request->file('foto_calon');
-//        $gambarName = time().'.'.$fotocalon->extension();
-//        $fotocalon->move(public_path('uploads'), $gambarName);
-//
-//        $pemilih = ImportPemilih::find($IdPemilih);
-//
-//        if (!$pemilih) {
-//            return response()->json(['error' => 'Pemilihan not found'], 404);
-//        }
-//
-//        // Simpan data calon kandidat ke database
-//        $calons = new Calons;
-//        $calons->IdUser = $IdUser->IdUser;
-//        $calons->IdPemilih = $IdPemilih;
-//        $calons->visi = $request->input('visi');
-//        $calons->misi = $request->input('misi');
-//        $calons->foto_calon = $gambarName;
-//        $calons->save();
-//
-//        return response()->json(['message' => 'Data calon kandidat berhasil disimpan'], 201);
-//    }
 
 
 }
